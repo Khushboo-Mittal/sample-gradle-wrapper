@@ -9,7 +9,7 @@ on:
         default: '17'
         type: string
       build-tool:
-        description: 'Build tool to use: maven or gradle-wrapper'
+        description: 'Build tool to use: maven, gradle, or gradle-wrapper'
         required: false
         default: 'maven'
         type: string
@@ -26,7 +26,7 @@ jobs:
       - name: Validate build tool input
         run: |
           echo "Validating build tool: ${{ inputs.build-tool }}"
-          if [[ "${{ inputs.build-tool }}" != "maven" && "${{ inputs.build-tool }}" != "gradle-wrapper" ]]; then
+          if [[ "${{ inputs.build-tool }}" != "maven" && "${{ inputs.build-tool }}" != "gradle" && "${{ inputs.build-tool }}" != "gradle-wrapper" ]]; then
             echo "❌ Unsupported build tool: ${{ inputs.build-tool }}"
             exit 1
           fi
@@ -59,6 +59,8 @@ jobs:
               exit 1
             fi
             ./gradlew --version || { echo "❌ Gradle Wrapper is not working"; exit 1; }
+          elif [[ "${{ inputs.build-tool }}" == "gradle" ]]; then
+            gradle -v || { echo "❌ Gradle is not installed or not in PATH"; exit 1; }
           fi
 
       - name: Build project
@@ -68,6 +70,8 @@ jobs:
             mvn clean install -DskipTests || { echo "❌ Maven build failed"; exit 1; }
           elif [[ "${{ inputs.build-tool }}" == "gradle-wrapper" ]]; then
             ./gradlew clean build -x test || { echo "❌ Gradle Wrapper build failed"; exit 1; }
+          elif [[ "${{ inputs.build-tool }}" == "gradle" ]]; then
+            gradle clean build -x test || { echo "❌ Gradle build failed"; exit 1; }
           fi
 
       - name: Upload JAR artifacts
@@ -114,6 +118,8 @@ jobs:
               exit 1
             fi
             ./gradlew --version || { echo "❌ Gradle Wrapper is not working"; exit 1; }
+          elif [[ "${{ inputs.build-tool }}" == "gradle" ]]; then
+            gradle -v || { echo "❌ Gradle is not installed or not in PATH"; exit 1; }
           fi
 
       - name: Run Checkstyle (Linting)
@@ -131,6 +137,12 @@ jobs:
             else
               echo "⚠️ checkstyle.xml not found. Skipping Checkstyle."
             fi
+          elif [[ "${{ inputs.build-tool }}" == "gradle" ]]; then
+            if [[ -f "checkstyle.xml" ]]; then
+              gradle checkstyleMain || { echo "❌ Checkstyle violations found"; exit 1; }
+            else
+              echo "⚠️ checkstyle.xml not found. Skipping Checkstyle."
+            fi
           fi
 
       - name: Run tests
@@ -141,6 +153,8 @@ jobs:
             mvn verify || echo "❌ Maven tests failed"
           elif [[ "${{ inputs.build-tool }}" == "gradle-wrapper" ]]; then
             ./gradlew test || echo "❌ Gradle Wrapper tests failed"
+          elif [[ "${{ inputs.build-tool }}" == "gradle" ]]; then
+            gradle test || echo "❌ Gradle tests failed"
           fi
 
       - name: Append test results to GitHub summary
