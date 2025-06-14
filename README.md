@@ -26,11 +26,12 @@ It performs all essential phases — dependency resolution, build, test, static 
 ## Table of Contents
 
 * [Features](#features)
-* [Workflow Directory Structure](#workflow-directory-structure)
 * [Job and Step Explanation](#job-and-step-explanation)
 * [How to Reuse in Main Workflow](#how-to-reuse-in-main-workflow)
-* [Debugging and Possible Failures](#debugging-and-possible-failures)
+* [Input Parameter Table](#input-parameter-table)
+* [Workflow Directory Structure](#workflow-directory-structure)
 * [Test Summary and Artifacts](#test-summary-and-artifacts)
+* [Debugging and Possible Failures](#debugging-and-possible-failures)
 * [Conclusion](#conclusion)
 
 ---
@@ -44,6 +45,67 @@ It performs all essential phases — dependency resolution, build, test, static 
 * Initializes Java with a specified Java version
 * Stores build and test reports as GitHub Actions artifacts
 * Allows customization through **inputs (java-version and build-tool)**
+
+---
+
+## Job and Step Explanation
+
+The reusable workflow comprises two main jobs:
+
+---
+
+### 1. Build Job:
+
+* **Checkout code:** Initializes your codebase in the runner.
+* **Validate build tool:** Verifies whether the specified build tool is supported.
+* **Set up Java:** Initializes Java with the specified `java-version`.
+* **Cache:** Caches downloaded libraries to cut down future build time.
+* **Clean and Build:** Performs `mvn clean install -DskipTests` or `gradle clean build -x test`.
+* **Publish Artifacts:** Stores resulting `.jar` files in GitHub Actions’ artifacts.
+
+---
+
+### 2. Test Job:
+
+* **Checkout code:** Initializes code in the runner.
+* **Set up Java:** Initializes Java with specified `java-version`.
+* **Cache:** Restores downloaded libraries from cache.
+* **Static Code Analysis:** Performs Checkstyle if configuration is present.
+* **JUnit Tests:** Invokes `mvn test` or `gradlew test`.
+* **Test Summary:** parses test reports and produces a summary in GitHub Actions Summary view.
+* **Publish Reports:** Stores test reports as artifacts for further inspection.
+
+---
+
+## How to Reuse in Main Workflow
+
+Create a `.github/workflows/main.yaml` in your repository:
+
+```yaml
+name: Main Build and Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  build-and-test:
+    uses: .github/workflows/reusable-java-build.yaml
+    with:
+      java-version: '17'
+      build-tool: 'gradle-wrapper'
+```
+
+---
+
+## Input Parameter Table
+
+| Parameter      | Description                                             | Default |
+| -------------- | ------------------------------------------------------- | ------- |
+| `java-version` | Java version to use (e.g. 8, 11, 17)                    | 17      |
+| `build-tool`   | Build tool to use (`maven`, `gradle`, `gradle-wrapper`) | `maven` |  
 
 ---
 
@@ -118,55 +180,23 @@ The directory structure varies depending on your build tool.
 
 ---
 
-## Job and Step Explanation
+## Test Summary and Artifacts
 
-The reusable workflow comprises two main jobs:
+The workflow parses **JUnit reports** and displays a summary table directly in GitHub Actions’ Summary view:
 
----
+| Test Class | Tests | Passed | Failures | Skipped |
+| ---------- | ----- | ------ | -------- | ------- |
 
-### 1. Build Job:
+This lets you quickly view:
 
-* **Checkout code:** Initializes your codebase in the runner.
-* **Validate build tool:** Verifies whether the specified build tool is supported.
-* **Set up Java:** Initializes Java with the specified `java-version`.
-* **Cache:** Caches downloaded libraries to cut down future build time.
-* **Clean and Build:** Performs `mvn clean install -DskipTests` or `gradle clean build -x test`.
-* **Publish Artifacts:** Stores resulting `.jar` files in GitHub Actions’ artifacts.
+* Number of Tests Executed
+* Number of Tests Passed or Failed
+* Number of Tests Skipped
 
----
+Additionally:
 
-### 2. Test Job:
-
-* **Checkout code:** Initializes code in the runner.
-* **Set up Java:** Initializes Java with specified `java-version`.
-* **Cache:** Restores downloaded libraries from cache.
-* **Static Code Analysis:** Performs Checkstyle if configuration is present.
-* **JUnit Tests:** Invokes `mvn test` or `gradlew test`.
-* **Test Summary:** parses test reports and produces a summary in GitHub Actions Summary view.
-* **Publish Reports:** Stores test reports as artifacts for further inspection.
-
----
-
-## How to Reuse in Main Workflow
-
-Create a `.github/workflows/main.yaml` in your repository:
-
-```yaml
-name: Main Build and Tests
-
-on:
-  push:
-    branches:
-      - main
-  pull_request:
-
-jobs:
-  build-and-test:
-    uses: .github/workflows/reusable-java-build.yaml
-    with:
-      java-version: '17'
-      build-tool: 'gradle-wrapper'
-```
+* The complete **JUnit reports** and **Checkstyle reports** are available under **Actions > Summary > Artifacts**.
+* Download these files to view detailed information in your IDE or browser.
 
 ---
 
@@ -190,25 +220,6 @@ Some common issues you may encounter:
 
 ---
 
-## Test Summary and Artifacts
-
-The workflow parses **JUnit reports** and displays a summary table directly in GitHub Actions’ Summary view:
-
-| Test Class | Tests | Passed | Failures | Skipped |
-| ---------- | ----- | ------ | -------- | ------- |
-
-This lets you quickly view:
-
-* Number of Tests Executed
-* Number of Tests Passed or Failed
-* Number of Tests Skipped
-
-Additionally:
-
-* The complete **JUnit reports** and **Checkstyle reports** are available under **Actions > Summary > Artifacts**.
-* Download these files to view detailed information in your IDE or browser.
-
----
 
 ## Conclusion
 
