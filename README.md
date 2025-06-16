@@ -2,7 +2,7 @@
 
 ## Overview
 
-This reusable GitHub Actions workflow is designed to **build and test Java applications** using either **Maven**, **Gradle**, or **Gradle Wrapper** as the build tool.
+This project demonstrates how to set up a Java application using the **Gradle Wrapper** and automate the build and test processes using GitHub Actions. The Gradle Wrapper ensures a consistent build environment across different systems **without requiring users to install Gradle manually**.
 It performs all essential phases — dependency resolution, build, test, static code analysis, and artifact storage — in a unified and reusable way.
 
 ---
@@ -10,14 +10,11 @@ It performs all essential phases — dependency resolution, build, test, static 
 ### Main Goals:
 
 * Provide a reusable pipeline for Java projects.
-* Support different build systems: **Maven**, **Gradle**, or **Gradle Wrapper**.
+* Support the **Gradle Wrapper** build system.
 * Perform a clean build ignoring tests first, then execute the test suite separately.
 * Validate supported Java versions and build tools.
 * Install and cache project dependencies for faster builds.
 * Run appropriate build and test commands:
-
-  * **Maven:** `mvn clean install -DskipTests`, then `mvn test`
-  * **Gradle:** `gradle clean build -x test`
   * **Gradle Wrapper:** `./gradlew clean build -x test`
 * Provide a summary of test results alongside a pass/fail report.
 
@@ -38,7 +35,7 @@ It performs all essential phases — dependency resolution, build, test, static 
 
 ## Features
 
-* Support for **Maven**, **Gradle**, and **Gradle Wrapper**
+* Support for **Gradle Wrapper** build system.
 * Performs **Clean Build ignoring Tests first**, then **Runs Tests separately**
 * Performs **Static Code Analysis** (Checkstyle) if configured
 * Initializes cache to reuse downloaded libraries across builds
@@ -60,7 +57,7 @@ The reusable workflow comprises two main jobs:
 * **Validate build tool:** Verifies whether the specified build tool is supported.
 * **Set up Java:** Initializes Java with the specified `java-version`.
 * **Cache:** Caches downloaded libraries to cut down future build time.
-* **Clean and Build:** Performs `mvn clean install -DskipTests` or `gradle clean build -x test`.
+* **Clean and Build:** Performs `./gradlew clean build -x test`.
 * **Publish Artifacts:** Stores resulting `.jar` files in GitHub Actions’ artifacts.
 
 ---
@@ -71,7 +68,7 @@ The reusable workflow comprises two main jobs:
 * **Set up Java:** Initializes Java with specified `java-version`.
 * **Cache:** Restores downloaded libraries from cache.
 * **Static Code Analysis:** Performs Checkstyle if configuration is present.
-* **JUnit Tests:** Invokes `mvn test` or `gradlew test`.
+* **JUnit Tests:** Invokes `gradlew test`.
 * **Test Summary:** parses test reports and produces a summary in GitHub Actions Summary view.
 * **Publish Reports:** Stores test reports as artifacts for further inspection.
 
@@ -111,49 +108,11 @@ jobs:
 
 ## Workflow Directory Structure
 
-The directory structure varies depending on your build tool.
+The directory structure for Gradle Wrapper build tool is as follows:
 
 ---
 
-### 1. Maven Project
-
-```
-├─ .github/
-│ └─ workflows/
-│   ├─ main.yaml
-│   └─ reusable-java-build.yaml
-├─ src/
-│ ├─ main/
-│ └─ test/
-├─ checkstyle.xml
-├─ pom.xml
-├─ README.md
-```
-
----
-
-### 2. Gradle Project (without wrapper)
-
-```
-├─ .github/
-│ └─ workflows/
-│   ├─ main.yaml
-│   └─ reusable-java-build.yaml
-├─ src/
-│ ├─ main/
-│ └─ test/
-├─ config/
-│ └─ checkstyle/
-│   └─ checkstyle.xml
-├─ .gitignore
-├─ build.gradle
-├─ settings.gradle
-├─ README.md
-```
-
----
-
-### 3. Gradle Wrapper Project
+### Gradle Wrapper Project
 
 ```
 ├─ .github/
@@ -208,8 +167,6 @@ Some common issues you may encounter:
   Check if `gradlew` and `gradle-wrapper.jar` exist in your directory structure.
 * **Checkstyle config not found:**
   Confirm `checkstyle.xml` is present in `.github/workflows/` or `config/checkstyle/`.
-* **Maven or Gradle not installed:**
-  The workflow already sets up Java and cache; make sure your `java-version` is supported.
 * **Test Failures:**
   The summary will show:
 
